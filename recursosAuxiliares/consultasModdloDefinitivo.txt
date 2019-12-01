@@ -1,0 +1,48 @@
+----------------------------------------------- CREATE ------------------------------------------------------
+
+CREATE OR REPLACE MODEL `wide-oasis-135923.iamarketingdvs.modelodefinitivo1`
+OPTIONS(model_type='logistic_reg') AS
+SELECT
+IFNULL(SUM(( SELECT value FROM UNNEST(hits.customMetrics) WHERE index = 2)),0) AS label,
+date, case when hits.hour > 7 and hits.hour < 13 then 'manana' when hits.hour > 13 and hits.hour < 20 then 'tarde' else 'noche' end as momentodia, hits.hour as hora, clientId, geoNetwork.city as ciudad, device.deviceCategory as categoriaDispositivo, device.mobileDeviceBranding as marca, device.browser as navegador, trafficSource.source as fuente, trafficSource.campaign as campana, (SELECT value FROM UNNEST(session.customDimensions) WHERE index = 14 GROUP BY 1) AS producto, device.operatingSystem as OS, sum(totals.visits) as visitas, CASE WHEN sum(totals.transactions) < 1 THEN 0 ELSE totals.transactions END as subs
+FROM `wide-oasis-135923.140393857.ga_sessions_*` as session,
+UNNEST(hits) AS hits
+where _table_suffix BETWEEN '20190101' AND '20191001'
+and trafficSource.campaign like '%range%'
+and trafficSource.source like '%google%'
+and totals.transactions > 0
+GROUP BY date, clientId, ciudad, marca, categoriaDispositivo, totals.transactions, navegador, campana, fuente, producto, OS, hora
+
+
+
+----------------------------------------------- EVALUATE ------------------------------------------------------
+
+SELECT
+  *
+FROM ML.EVALUATE(MODEL `wide-oasis-135923.iamarketingdvs.modelodefinitivo1`, (
+SELECT
+IFNULL(SUM(( SELECT value FROM UNNEST(hits.customMetrics) WHERE index = 2)),0) AS label,
+date, case when hits.hour > 7 and hits.hour < 13 then 'manana' when hits.hour > 13 and hits.hour < 20 then 'tarde' else 'noche' end as momentodia, hits.hour as hora, clientId, geoNetwork.city as ciudad, device.deviceCategory as categoriaDispositivo, device.mobileDeviceBranding as marca, device.browser as navegador, trafficSource.source as fuente, trafficSource.campaign as campana, (SELECT value FROM UNNEST(session.customDimensions) WHERE index = 14 GROUP BY 1) AS producto, device.operatingSystem as OS, sum(totals.visits) as visitas, CASE WHEN sum(totals.transactions) < 1 THEN 0 ELSE totals.transactions END as subs, IFNULL(SUM(( SELECT value FROM UNNEST(hits.customMetrics) WHERE index = 2)),0) AS Fbilled
+FROM `wide-oasis-135923.140393857.ga_sessions_*` as session,
+UNNEST(hits) AS hits
+where _table_suffix BETWEEN '20191002' AND '20191030'
+and trafficSource.campaign like '%range%'
+and trafficSource.source like '%google%'
+and totals.transactions > 0
+GROUP BY date, clientId, ciudad, marca, categoriaDispositivo, totals.transactions, navegador, campana, fuente, producto, OS, hora))
+
+----------------------------------------------- PREDICT ------------------------------------------------------
+
+SELECT
+  *
+FROM ML.PREDICT(MODEL `wide-oasis-135923.iamarketingdvs.modelodefinitivo1`, (
+SELECT
+IFNULL(SUM(( SELECT value FROM UNNEST(hits.customMetrics) WHERE index = 2)),0) AS label,
+date, case when hits.hour > 7 and hits.hour < 13 then 'manana' when hits.hour > 13 and hits.hour < 20 then 'tarde' else 'noche' end as momentodia, hits.hour as hora, clientId, geoNetwork.city as ciudad, device.deviceCategory as categoriaDispositivo, device.mobileDeviceBranding as marca, device.browser as navegador, trafficSource.source as fuente, trafficSource.campaign as campana, (SELECT value FROM UNNEST(session.customDimensions) WHERE index = 14 GROUP BY 1) AS producto, device.operatingSystem as OS, sum(totals.visits) as visitas, CASE WHEN sum(totals.transactions) < 1 THEN 0 ELSE totals.transactions END as subs, IFNULL(SUM(( SELECT value FROM UNNEST(hits.customMetrics) WHERE index = 2)),0) AS Fbilled
+FROM `wide-oasis-135923.140393857.ga_sessions_*` as session,
+UNNEST(hits) AS hits
+where _table_suffix BETWEEN '20191002' AND '20191030'
+and trafficSource.campaign like '%range%'
+and trafficSource.source like '%google%'
+and totals.transactions > 0
+GROUP BY date, clientId, ciudad, marca, categoriaDispositivo, totals.transactions, navegador, campana, fuente, producto, OS, hora))

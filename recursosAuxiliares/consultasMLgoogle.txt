@@ -1,0 +1,18 @@
+CREATE OR REPLACE MODEL `ml-small.MLsmalldataset.modelodef_1`
+OPTIONS(model_type='logistic_reg') AS
+SELECT fullVisitorId as user,
+  --geoNetwork.country as pais,
+  SUM(totals.visits) AS visitas,
+  case when hits.hour > 7 and hits.hour < 13 then 'manana' when hits.hour > 13 and hits.hour < 20 then 'tarde' else 'noche' end as momentodia,
+  geoNetwork.city as ciudad,
+  device.deviceCategory as categoriaDispositivo,
+  device.mobileDeviceBranding as marca,
+  device.browser as navegador,
+  trafficSource.source as fuente,
+  case when IFNULL(SUM(totals.transactions),0) > 0 then 1 else 0 end AS label
+FROM
+  `bigquery-public-data.google_analytics_sample.ga_sessions_*` as session, UNNEST(hits) AS hits
+  where _table_suffix BETWEEN '20160801' AND '20170631' 
+GROUP BY
+  user, momentodia, ciudad, categoriaDispositivo, marca, navegador, fuente
+
